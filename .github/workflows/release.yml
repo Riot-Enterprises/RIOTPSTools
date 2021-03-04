@@ -33,4 +33,4 @@ jobs:
           prerelease: false
           files: |
             LICENSE
-            ${{ github.workspaces }}/*.zip
+            ${{ github.workspace }}/Release/*.zip

@@ -22,7 +22,7 @@ jobs:
           $command += ' Install'
           write-output $command
           gci $env:GITHUB_WORKSPACE
-          #iex $command
+          iex $command
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"

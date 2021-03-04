@@ -17,7 +17,7 @@ jobs:
       - name: "Build & test"
         shell: pwsh
         run: |
-          $command = Join-Path $env:GITHUB_WORKFLOW tools build.ps1
+          $command = Join-Path $env:GITHUB_WORKSPACE tools build.ps1
           $command += ' Install'
           write-output $command
           iex $command

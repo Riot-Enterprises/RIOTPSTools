@@ -16,7 +16,7 @@ jobs:
       # ...
       - name: "Build & test"
         shell: pwsh
-        run: ./tools/build.ps1 Install
+        run: ${{ github.workspace }}/tools/build.ps1 Install
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"

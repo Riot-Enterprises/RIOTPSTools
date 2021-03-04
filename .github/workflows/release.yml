@@ -24,7 +24,7 @@ jobs:
         shell: pwsh
         run: |
           $command = Join-Path $env:GITHUB_WORKSPACE tools build.ps1
-          $command += ' Install'
+          $command += ' Release'
           write-output $command
           iex $command
       - uses: "marvinpinto/action-automatic-releases@latest"

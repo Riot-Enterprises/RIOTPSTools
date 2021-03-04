@@ -127,6 +127,12 @@ Task ExportPublicFunctions -requiredVariables SrcRootDir, ModuleOutDir, ModuleNa
         'No public fuctions to export.'
     }
 }
+Task ExportGitVersion -requiredVariables ModuleOutDir, ModuleName {
+    $Manifest = (Get-ChildItem $ModuleOutDir -File -Recurse -Include "$ModuleName.psd1" | Sort-Object FullName.Length | Select-Object -First 1)
+    Import-Module BuildHelpers
+    $Version = git describe | Select-String '^\d+?\.\d+?\.\d+?\w'  | Select-Object -ExpandProperty Matches | Select-Object -ExpandProperty Value
+    Update-Metadata -Path $Manifest.FullName -PropertyName ModuleVersion -Value $Version
+}
 
 Task ExportFunctionsToSrc -requiredVariables SrcRootDir, ModuleName {
     $PublicScriptFiles = @(Get-ChildItem "$SrcRootDir\Public" -Filter *.ps1 -Recurse)
@@ -155,7 +161,7 @@ Task Clean -depends Init -requiredVariables OutDir {
     }
 }
 
-Task StageFiles -depends Init, Clean, BeforeStageFiles, CoreStageFiles, AfterStageFiles, ExportPublicFunctions {
+Task StageFiles -depends Init, Clean, BeforeStageFiles, CoreStageFiles, AfterStageFiles, ExportPublicFunctions, ExportGitVersion {
 }
 
 Task CoreStageFiles -requiredVariables ModuleOutDir, SrcRootDir, ModuleName {
@@ -555,6 +561,7 @@ Task Test -depends Build -requiredVariables TestRootDir, ModuleName {
 
 Task Release -depends Build, Test, BuildHelp, GenerateFileCatalog, BeforeRelease, CoreRelease, AfterRelease {
 }
+
 
 Task CoreRelease -requiredVariables ModuleOutDir, OutDir, ModuleName {
     Compress-Archive -DestinationPath $OutDir\Release.zip -Path $ModuleOutDir

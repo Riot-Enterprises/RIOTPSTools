@@ -21,6 +21,6 @@ jobs:
           NUGET_KEY: ${{ secrets.POWERSHELL_GALLERY_KEY }}
         shell: pwsh
         run: |
-          Expand-Archive -Path 'Release.zip' -Path release
+          Expand-Archive -Path 'Release.zip' -DestinationPath Release
           $Folder = Get-ChildItem Release -Directory | Select -First 1
           Publish-Module -Path $Folder -NuGetApiKey $env:NUGET_KEY -Verbose

@@ -1,0 +1,1 @@
+Invoke-psake -buildFile "$PSScriptRoot\_build.psake.ps1" -taskList 'Release' -Verbose:$VerbosePreference

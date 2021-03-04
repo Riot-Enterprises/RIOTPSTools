@@ -15,13 +15,18 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+      - name: "Install Dependencies"
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module psake, PSScriptAnalyzer, pester
       - name: "Build & test"
         shell: pwsh
         run: |
           $command = Join-Path $env:GITHUB_WORKSPACE tools build.ps1
           $command += ' Install'
           write-output $command
-          gci $env:GITHUB_WORKSPACE
+          install-modu
           iex $command
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:

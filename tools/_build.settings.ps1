@@ -5,30 +5,10 @@
 Properties {
     # --------------------------- Basic properties ----------------------------
 
-    # The project root path
-    $ProjectRoot = Split-Path -parent $PSScriptRoot
-
-    # The root directories for the module's docs, src and test.
-    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
-    $DocsRootDir = "$ProjectRoot\docs"
-    $SrcRootDir  = "$ProjectRoot\src"
-    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
-    $TestRootDir = "$ProjectRoot\tests"
-
-    # The name of your module should match the basename of the PSD1 file.
-    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
-    $ModuleName = Get-Item $SrcRootDir/*.psd1 |
-                      Where-Object { $null -ne (Test-ModuleManifest -Path $_ -ErrorAction SilentlyContinue) } |
-                      Select-Object -First 1 | Foreach-Object BaseName
-
-    # The $OutDir is where module files and updatable help files are staged for signing, install and publishing.
-    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
-    $OutDir = "$ProjectRoot\Release"
-
     # The local installation directory for the install task. Defaults to your home Modules location.
     [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
     $InstallPath = Join-Path (Split-Path $profile.CurrentUserAllHosts -Parent) `
-                             "Modules\$ModuleName\$((Test-ModuleManifest -Path $SrcRootDir\$ModuleName.psd1).Version.ToString())"
+        "Modules\$ModuleName\$((Test-ModuleManifest -Path $SrcRootDir\$ModuleName.psd1).Version.ToString())"
 
     # Default Locale used for help generation, defaults to en-US.
     [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
@@ -99,7 +79,7 @@ Properties {
 
     # Certificate store path.
     [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
-    $CertPath = "Cert:\"
+    $CertPath = 'Cert:\'
 
     # ------------------------ File catalog properties ------------------------
 
@@ -116,13 +96,28 @@ Properties {
 
     # Enable/disable Pester code coverage reporting.
     [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
-    $CodeCoverageEnabled = $true
+    $CoverageOutputFile = "$OutDir\CodeCoverage.xml"
+    # Specifies the test output format to use when the TestOutputFile property is given
+    # a path.  This parameter is passed through to Invoke-Pester's -OutputFormat parameter.
+    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
+    $CoverageOutputFormat = 'NUnitXml'
+
+    # Specifies an output file path to send to Invoke-Pester's -OutputFile parameter.
+    # This is typically used to write out test results so that they can be sent to a CI
+    # system like AppVeyor.
+    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
+    $TestOutputFile = $null #"$OutDir\TestResults.xml"
+
+    # Specifies the test output format to use when the TestOutputFile property is given
+    # a path.  This parameter is passed through to Invoke-Pester's -OutputFormat parameter.
+    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
+    $TestOutputFormat = 'NUnitXml'
 
     # CodeCoverageFiles specifies the files to perform code coverage analysis on. This property
     # acts as a direct input to the Pester -CodeCoverage parameter, so will support constructions
     # like the ones found here: https://github.com/pester/Pester/wiki/Code-Coverage.
-    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
-    $CodeCoverageFiles = "$SrcRootDir\*.ps1", "$SrcRootDir\*.psm1"
+    # [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
+    # $CodeCoverageFiles = "$SrcRootDir\*.ps1", "$SrcRootDir\*.psm1"
 
     # ------------------------- Publishing properties -------------------------
 
@@ -149,16 +144,7 @@ Properties {
     [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
     $SettingsPath = "$env:LOCALAPPDATA\Plaster\OmniModuleTemplate\SecuredBuildSettings.clixml"
 
-    # Specifies an output file path to send to Invoke-Pester's -OutputFile parameter.
-    # This is typically used to write out test results so that they can be sent to a CI
-    # system like AppVeyor.
-    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
-    $TestOutputFile = $null
 
-    # Specifies the test output format to use when the TestOutputFile property is given
-    # a path.  This parameter is passed through to Invoke-Pester's -OutputFormat parameter.
-    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
-    $TestOutputFormat = "NUnitXml"
 }
 
 ###############################################################################
@@ -232,6 +218,19 @@ Task BeforeInstall {
 # Executes after the Install task.
 Task AfterInstall {
 }
+
+###############################################################################
+# Customize these tasks for performing operations before and/or after Publish.
+###############################################################################
+
+# Executes before the Release task.
+Task BeforeRelease {
+}
+
+# Executes after the Release task.
+Task AfterRelease {
+}
+
 
 ###############################################################################
 # Customize these tasks for performing operations before and/or after Publish.

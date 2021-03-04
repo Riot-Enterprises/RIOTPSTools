@@ -62,6 +62,27 @@
 # Private properties.
 ###############################################################################
 Properties {
+    # The project root path
+    $ProjectRoot = Split-Path -Parent $PSScriptRoot
+
+    # The root directories for the module's docs, src and test.
+    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
+    $DocsRootDir = "$ProjectRoot\docs"
+    $SrcRootDir = "$ProjectRoot\src"
+    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
+    $TestRootDir = "$ProjectRoot\tests"
+
+    # The name of your module should match the basename of the PSD1 file.
+    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
+    $ModuleName = Get-Item $SrcRootDir/*.psd1 |
+        Where-Object { $null -ne (Test-ModuleManifest -Path $_ -ErrorAction SilentlyContinue) } |
+        Select-Object -First 1 | ForEach-Object BaseName
+
+    # The $OutDir is where module files and updatable help files are staged for signing, install and publishing.
+    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
+    $OutDir = "$ProjectRoot\Release"
+
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
     $ModuleOutDir = "$OutDir\$ModuleName"
 
@@ -72,7 +93,7 @@ Properties {
     $SharedProperties = @{}
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage('PSUseDeclaredVarsMoreThanAssigments', '')]
-    $LineSep = "-" * 78
+    $LineSep = '-' * 78
 }
 
 ###############################################################################
@@ -93,16 +114,17 @@ Task ExportPublicFunctions -requiredVariables SrcRootDir, ModuleOutDir, ModuleNa
     $PublicScriptFiles = @(Get-ChildItem "$SrcRootDir\Public" -Filter *.ps1 -Recurse)
 
     $PublicFunctions = @(foreach ($ScriptFile in $PublicScriptFiles) {
-        $Parser = [System.Management.Automation.Language.Parser]::ParseFile($ScriptFile.FullName, [ref] $null, [ref] $null)
-        if ($Parser.EndBlock.Statements.Name) {
-            $Parser.EndBlock.Statements.Name
-        }
-    })
+            $Parser = [System.Management.Automation.Language.Parser]::ParseFile($ScriptFile.FullName, [ref] $null, [ref] $null)
+            if ($Parser.EndBlock.Statements.Name) {
+                $Parser.EndBlock.Statements.Name
+            }
+        })
 
     if ($PublicFunctions.Count -ge 1) {
         Update-ModuleManifest -Path "$ModuleOutDir\$ModuleName.psd1" -FunctionsToExport $PublicFunctions
-    } else {
-        "No public fuctions to export."
+    }
+    else {
+        'No public fuctions to export.'
     }
 }
 
@@ -110,16 +132,17 @@ Task ExportFunctionsToSrc -requiredVariables SrcRootDir, ModuleName {
     $PublicScriptFiles = @(Get-ChildItem "$SrcRootDir\Public" -Filter *.ps1 -Recurse)
 
     $PublicFunctions = @(foreach ($ScriptFile in $PublicScriptFiles) {
-        $Parser = [System.Management.Automation.Language.Parser]::ParseFile($ScriptFile.FullName, [ref] $null, [ref] $null)
-        if ($Parser.EndBlock.Statements.Name) {
-            $Parser.EndBlock.Statements.Name
-        }
-    })
+            $Parser = [System.Management.Automation.Language.Parser]::ParseFile($ScriptFile.FullName, [ref] $null, [ref] $null)
+            if ($Parser.EndBlock.Statements.Name) {
+                $Parser.EndBlock.Statements.Name
+            }
+        })
 
     if ($PublicFunctions.Count -ge 1) {
         Update-ModuleManifest -Path "$SrcRootDir\$ModuleName.psd1" -FunctionsToExport $PublicFunctions
-    } else {
-        "No public fuctions to export."
+    }
+    else {
+        'No public fuctions to export.'
     }
 }
 
@@ -145,15 +168,16 @@ Task CoreStageFiles -requiredVariables ModuleOutDir, SrcRootDir, ModuleName {
 
     if (-not ($ConcatenateBuild)) {
         Copy-Item -Path $SrcRootDir\* -Destination $ModuleOutDir -Recurse -Exclude $Exclude -Verbose:$VerbosePreference
-    } else {
+    }
+    else {
         "Module concatenation is enabled. Level $ConcatenationLevel"
         switch ($ConcatenationLevel) {
             1 {
-                $FunctionFolders = @("Private","Public")
-                [regex] $FunctionFoldersRegEx = '(?i)' + (($FunctionFolders | ForEach-Object {[regex]::escape($_)}) -join "|") + ''
+                $FunctionFolders = @('Private', 'Public')
+                [regex] $FunctionFoldersRegEx = '(?i)' + (($FunctionFolders | ForEach-Object { [regex]::escape($_) }) -join '|') + ''
 
                 # Copy all but Public and Private
-                $ToCopy = Get-ChildItem -Path $SrcRootDir -Recurse | Where-Object { $_.FullName.Replace($SrcRootDir, "") -notmatch $FunctionFoldersRegEx }
+                $ToCopy = Get-ChildItem -Path $SrcRootDir -Recurse | Where-Object { $_.FullName.Replace($SrcRootDir, '') -notmatch $FunctionFoldersRegEx }
 
                 foreach ($Item in $ToCopy) {
                     # Ignore empty folders.
@@ -175,35 +199,37 @@ Task CoreStageFiles -requiredVariables ModuleOutDir, SrcRootDir, ModuleName {
             2 {
                 # Copy non-script files.
                 Get-ChildItem -Path $SrcRootDir -Directory -Recurse |
-                    Where-Object { $_.GetFiles() -and $_.GetFiles().Extension -notmatch [regex]"ps1" } |
-                    Copy-Item -Destination {Join-Path $ModuleOutDir ($_.Parent.FullName.Substring($SrcRootDir.length))}
+                    Where-Object { $_.GetFiles() -and $_.GetFiles().Extension -notmatch [regex]'ps1' } |
+                    Copy-Item -Destination { Join-Path $ModuleOutDir ($_.Parent.FullName.Substring($SrcRootDir.length)) }
 
                 Get-ChildItem -Path $SrcRootDir -File -Recurse |
-                    Where-Object { $_.Name.Split('.')[-1] -notmatch [regex]"^ps1$" } |
+                    Where-Object { $_.Name.Split('.')[-1] -notmatch [regex]'^ps1$' } |
                     Copy-Item -Destination { Join-Path $ModuleOutDir $_.FullName.Substring($SrcRootDir.length) } -Force
 
                 # Concatinate the rest.
-                $Files = Get-ChildItem -Path $SrcRootDir -File -Recurse | Where-Object { $_.Name.Split('.')[-1] -match [regex]"^ps1$" }
+                $Files = Get-ChildItem -Path $SrcRootDir -File -Recurse | Where-Object { $_.Name.Split('.')[-1] -match [regex]'^ps1$' }
                 $ModuleManifest = Join-Path $ModuleOutDir "$ModuleName.psm1"
                 $ManifestContent = Get-Content $ModuleManifest -Raw
 
                 $Lines = foreach ($File in $Files) {
                     foreach ($Line in [System.IO.File]::ReadLines($File.FullName)) {
-                        if ($Line -like "#Requires*") {
-                            [pscustomobject]@{Level = 0 ; Line = $Line}
-                        } elseif ($Line -like "Using*") {
-                            [pscustomobject]@{Level = 1 ; Line = $Line}
-                        } else {
-                            [pscustomobject]@{Level = 2 ; Line = $Line}
+                        if ($Line -like '#Requires*') {
+                            [pscustomobject]@{Level = 0 ; Line = $Line }
+                        }
+                        elseif ($Line -like 'Using*') {
+                            [pscustomobject]@{Level = 1 ; Line = $Line }
+                        }
+                        else {
+                            [pscustomobject]@{Level = 2 ; Line = $Line }
                         }
                     }
                 }
 
                 Set-Content $ModuleManifest -Value $null -Encoding Ascii -Force
-                $Lines | Where-Object { $_.Level -eq 0 } | Select -ExpandProperty Line | Out-File $ModuleManifest -Append -Encoding ascii
-                $Lines | Where-Object { $_.Level -eq 1 } | Select -ExpandProperty Line | Out-File $ModuleManifest -Append -Encoding ascii
+                $Lines | Where-Object { $_.Level -eq 0 } | Select-Object -ExpandProperty Line | Out-File $ModuleManifest -Append -Encoding ascii
+                $Lines | Where-Object { $_.Level -eq 1 } | Select-Object -ExpandProperty Line | Out-File $ModuleManifest -Append -Encoding ascii
                 $ManifestContent | Out-File $ModuleManifest -Append -Encoding ascii
-                $Lines | Where-Object { $_.Level -eq 2 } | Select -ExpandProperty Line | Out-File $ModuleManifest -Append -Encoding ascii
+                $Lines | Where-Object { $_.Level -eq 2 } | Select-Object -ExpandProperty Line | Out-File $ModuleManifest -Append -Encoding ascii
             }
 
             default {
@@ -217,7 +243,7 @@ Task Build -depends Init, Clean, BeforeBuild, StageFiles, Analyze, Sign, AfterBu
 }
 
 Task Analyze -depends StageFiles `
-             -requiredVariables ModuleOutDir, ScriptAnalysisEnabled, ScriptAnalysisFailBuildOnSeverityLevel, ScriptAnalyzerSettingsPath {
+    -requiredVariables ModuleOutDir, ScriptAnalysisEnabled, ScriptAnalysisFailBuildOnSeverityLevel, ScriptAnalyzerSettingsPath {
     if (!$ScriptAnalysisEnabled) {
         "Script analysis is not enabled. Skipping $($psake.context.currentTaskName) task."
         return
@@ -238,19 +264,19 @@ Task Analyze -depends StageFiles `
         }
         'Error' {
             Assert -conditionToCheck (
-                ($analysisResult | Where-Object Severity -eq 'Error').Count -eq 0
-                ) -failureMessage 'One or more ScriptAnalyzer errors were found. Build cannot continue!'
+                ($analysisResult | Where-Object Severity -EQ 'Error').Count -eq 0
+            ) -failureMessage 'One or more ScriptAnalyzer errors were found. Build cannot continue!'
         }
         'Warning' {
             Assert -conditionToCheck (
                 ($analysisResult | Where-Object {
-                    $_.Severity -eq 'Warning' -or $_.Severity -eq 'Error'
-                }).Count -eq 0) -failureMessage 'One or more ScriptAnalyzer warnings were found. Build cannot continue!'
+                        $_.Severity -eq 'Warning' -or $_.Severity -eq 'Error'
+                    }).Count -eq 0) -failureMessage 'One or more ScriptAnalyzer warnings were found. Build cannot continue!'
         }
         default {
             Assert -conditionToCheck (
                 $analysisResult.Count -eq 0
-                ) -failureMessage 'One or more ScriptAnalyzer issues were found. Build cannot continue!'
+            ) -failureMessage 'One or more ScriptAnalyzer issues were found. Build cannot continue!'
         }
     }
 }
@@ -261,13 +287,13 @@ Task Sign -depends StageFiles -requiredVariables CertPath, SettingsPath, ScriptS
         return
     }
 
-    $validCodeSigningCerts = Get-ChildItem -Path $CertPath -CodeSigningCert -Recurse | Where-Object NotAfter -ge (Get-Date)
+    $validCodeSigningCerts = Get-ChildItem -Path $CertPath -CodeSigningCert -Recurse | Where-Object NotAfter -GE (Get-Date)
     if (!$validCodeSigningCerts) {
         throw "There are no non-expired code-signing certificates in $CertPath. You can either install " +
-              "a code-signing certificate into the certificate store or disable script analysis in build.settings.ps1."
+        'a code-signing certificate into the certificate store or disable script analysis in build.settings.ps1.'
     }
 
-    $certSubjectNameKey = "CertSubjectName"
+    $certSubjectNameKey = 'CertSubjectName'
     $storeCertSubjectName = $true
 
     # Get the subject name of the code-signing certificate to be used for script signing.
@@ -275,17 +301,17 @@ Task Sign -depends StageFiles -requiredVariables CertPath, SettingsPath, ScriptS
         $storeCertSubjectName = $false
     }
     elseif (!$CertSubjectName) {
-        "A code-signing certificate has not been specified."
-        "The following non-expired, code-signing certificates are available in your certificate store:"
-        $validCodeSigningCerts | Format-List Subject,Issuer,Thumbprint,NotBefore,NotAfter
+        'A code-signing certificate has not been specified.'
+        'The following non-expired, code-signing certificates are available in your certificate store:'
+        $validCodeSigningCerts | Format-List Subject, Issuer, Thumbprint, NotBefore, NotAfter
 
         $CertSubjectName = Read-Host -Prompt 'Enter the subject name (case-sensitive) of the certificate to use for script signing'
     }
 
     # Find a code-signing certificate that matches the specified subject name.
     $certificate = $validCodeSigningCerts |
-                       Where-Object { $_.SubjectName.Name -cmatch [regex]::Escape($CertSubjectName) } |
-                       Sort-Object NotAfter -Descending | Select-Object -First 1
+        Where-Object { $_.SubjectName.Name -cmatch [regex]::Escape($CertSubjectName) } |
+        Sort-Object NotAfter -Descending | Select-Object -First 1
 
     if ($certificate) {
         $SharedProperties.CodeSigningCertificate = $certificate
@@ -302,12 +328,12 @@ Task Sign -depends StageFiles -requiredVariables CertPath, SettingsPath, ScriptS
         "Using code-signing certificate: $certificate"
         $LineSep
 
-        $files = @(Get-ChildItem -Path $ModuleOutDir\* -Recurse -Include *.ps1,*.psm1)
+        $files = @(Get-ChildItem -Path $ModuleOutDir\* -Recurse -Include *.ps1, *.psm1)
         foreach ($file in $files) {
             $setAuthSigParams = @{
-                FilePath = $file.FullName
+                FilePath    = $file.FullName
                 Certificate = $certificate
-                Verbose = $VerbosePreference
+                Verbose     = $VerbosePreference
             }
 
             $result = Microsoft.PowerShell.Security\Set-AuthenticodeSignature @setAuthSigParams
@@ -320,9 +346,9 @@ Task Sign -depends StageFiles -requiredVariables CertPath, SettingsPath, ScriptS
     }
     else {
         $expiredCert = Get-ChildItem -Path $CertPath -CodeSigningCert -Recurse |
-                           Where-Object { ($_.SubjectName.Name -cmatch [regex]::Escape($CertSubjectName)) -and
-                                          ($_.NotAfter -lt (Get-Date)) }
-                           Sort-Object NotAfter -Descending | Select-Object -First 1
+            Where-Object { ($_.SubjectName.Name -cmatch [regex]::Escape($CertSubjectName)) -and
+                ($_.NotAfter -lt (Get-Date)) }
+        Sort-Object NotAfter -Descending | Select-Object -First 1
 
         if ($expiredCert) {
             throw "The code-signing certificate `"$($expiredCert.SubjectName.Name)`" EXPIRED on $($expiredCert.NotAfter)."
@@ -361,7 +387,7 @@ Task GenerateMarkdown -requiredVariables DefaultLocale, DocsRootDir, ModuleName,
 
         # ErrorAction set to SilentlyContinue so this command will not overwrite an existing MD file.
         New-MarkdownHelp -Module $ModuleName -Locale $DefaultLocale -OutputFolder $DocsRootDir\$DefaultLocale `
-                         -WithModulePage -ErrorAction SilentlyContinue -Verbose:$VerbosePreference > $null
+            -WithModulePage -ErrorAction SilentlyContinue -Verbose:$VerbosePreference > $null
     }
     finally {
         Remove-Module $ModuleName
@@ -384,7 +410,7 @@ Task GenerateHelpFiles -requiredVariables DocsRootDir, ModuleName, ModuleOutDir,
     # Generate the module's primary MAML help file.
     foreach ($locale in $helpLocales) {
         New-ExternalHelp -Path $DocsRootDir\$locale -OutputPath $ModuleOutDir\$locale -Force `
-                         -ErrorAction SilentlyContinue -Verbose:$VerbosePreference > $null
+            -ErrorAction SilentlyContinue -Verbose:$VerbosePreference > $null
     }
 }
 
@@ -412,7 +438,7 @@ Task CoreBuildUpdatableHelp -requiredVariables DocsRootDir, ModuleName, Updatabl
     # file in the metadata.
     foreach ($locale in $helpLocales) {
         New-ExternalHelpCab -CabFilesFolder $ModuleOutDir\$locale -LandingPagePath $DocsRootDir\$locale\$ModuleName.md `
-                            -OutputFolder $UpdatableHelpOutDir -Verbose:$VerbosePreference > $null
+            -OutputFolder $UpdatableHelpOutDir -Verbose:$VerbosePreference > $null
     }
 }
 
@@ -433,10 +459,10 @@ Task CoreGenerateFileCatalog -requiredVariables CatalogGenerationEnabled, Catalo
     $catalogFilePath = "$OutDir\$ModuleName.cat"
 
     $newFileCatalogParams = @{
-        Path = $ModuleOutDir
+        Path            = $ModuleOutDir
         CatalogFilePath = $catalogFilePath
-        CatalogVersion = $CatalogVersion
-        Verbose = $VerbosePreference
+        CatalogVersion  = $CatalogVersion
+        Verbose         = $VerbosePreference
     }
 
     Microsoft.PowerShell.Security\New-FileCatalog @newFileCatalogParams > $null
@@ -444,9 +470,9 @@ Task CoreGenerateFileCatalog -requiredVariables CatalogGenerationEnabled, Catalo
     if ($ScriptSigningEnabled) {
         if ($SharedProperties.CodeSigningCertificate) {
             $setAuthSigParams = @{
-                FilePath = $catalogFilePath
+                FilePath    = $catalogFilePath
                 Certificate = $SharedProperties.CodeSigningCertificate
-                Verbose = $VerbosePreference
+                Verbose     = $VerbosePreference
             }
 
             $result = Microsoft.PowerShell.Security\Set-AuthenticodeSignature @setAuthSigParams
@@ -457,11 +483,11 @@ Task CoreGenerateFileCatalog -requiredVariables CatalogGenerationEnabled, Catalo
             "Successfully signed file catalog: $($catalogFilePath)"
         }
         else {
-            "No code-signing certificate was found to sign the file catalog."
+            'No code-signing certificate was found to sign the file catalog.'
         }
     }
     else {
-        "Script signing is not enabled. Skipping signing of file catalog."
+        'Script signing is not enabled. Skipping signing of file catalog.'
     }
 
     Move-Item -LiteralPath $newFileCatalogParams.CatalogFilePath -Destination $ModuleOutDir
@@ -480,7 +506,7 @@ Task CoreInstall -requiredVariables ModuleOutDir {
     "Module installed into $InstallPath"
 }
 
-Task Test -depends Build -requiredVariables TestRootDir, ModuleName, CodeCoverageEnabled, CodeCoverageFiles {
+Task Test -depends Build -requiredVariables TestRootDir, ModuleName {
     if (!(Get-Module Pester -ListAvailable)) {
         "Pester module is not installed. Skipping $($psake.context.currentTaskName) task."
         return
@@ -491,35 +517,33 @@ Task Test -depends Build -requiredVariables TestRootDir, ModuleName, CodeCoverag
     try {
         Microsoft.PowerShell.Management\Push-Location -LiteralPath $TestRootDir
 
+        $Configuration = [PesterConfiguration]::Default
+        $Configuration.Run.Path = $TestRootDir
+        $Configuration.Run.PassThru = $true
+        $Configuration.Filter.Tag = 'Integration'
+
         if ($TestOutputFile) {
-            $testing = @{
-                OutputFile   = $TestOutputFile
-                OutputFormat = $TestOutputFormat
-                PassThru     = $true
-                Verbose      = $VerbosePreference
-            }
-        }
-        else {
-            $testing = @{
-                PassThru     = $true
-                Verbose      = $VerbosePreference
-            }
+            $Configuration.TestResult.Enabled = $true
+            $Configuration.TestResult.OutputFormat = $TestOutputFormat
+            $Configuration.TestResult.OutputPath = $TestOutputFile
         }
 
         # To control the Pester code coverage, a boolean $CodeCoverageEnabled is used.
-        if ($CodeCoverageEnabled) {
-            $testing.CodeCoverage = $CodeCoverageFiles
+        if ($CoverageOutputFile) {
+            $Configuration.CodeCoverage.Enabled = $true
+            $Configuration.CodeCoverage.OutputFormat = $CoverageOutputFormat
+            $Configuration.CodeCoverage.OutputPath = $CoverageOutputFile
         }
 
-        $testResult = Invoke-Pester @testing
+        $testResult = Invoke-Pester -Configuration $Configuration
 
         Assert -conditionToCheck (
             $testResult.FailedCount -eq 0
-        ) -failureMessage "One or more Pester tests failed, build cannot continue."
+        ) -failureMessage 'One or more Pester tests failed, build cannot continue.'
 
-        if ($CodeCoverageEnabled) {
+        if ($CoverageOutputFile -and $testResult.CodeCoverage.NumberOfCommandsAnalyzed -gt 0) {
             $testCoverage = [int]($testResult.CodeCoverage.NumberOfCommandsExecuted /
-                                  $testResult.CodeCoverage.NumberOfCommandsAnalyzed * 100)
+                $testResult.CodeCoverage.NumberOfCommandsAnalyzed * 100)
             "Pester code coverage on specified files: ${testCoverage}%"
         }
     }
@@ -527,6 +551,13 @@ Task Test -depends Build -requiredVariables TestRootDir, ModuleName, CodeCoverag
         Microsoft.PowerShell.Management\Pop-Location
         Remove-Module $ModuleName -ErrorAction SilentlyContinue
     }
+}
+
+Task Release -depends Build, Test, BuildHelp, GenerateFileCatalog, BeforeRelease, CoreRelease, AfterRelease {
+}
+
+Task CoreRelease -requiredVariables ModuleOutDir, OutDir, ModuleName {
+    Compress-Archive -DestinationPath $OutDir\$ModuleName.zip -Path $ModuleOutDir
 }
 
 Task Publish -depends Build, Test, BuildHelp, GenerateFileCatalog, BeforePublish, CorePublish, AfterPublish {
@@ -540,10 +571,10 @@ Task CorePublish -requiredVariables SettingsPath, ModuleOutDir {
 
     # Publishing to the PSGallery requires an API key, so get it.
     if ($NuGetApiKey) {
-        "Using script embedded NuGetApiKey"
+        'Using script embedded NuGetApiKey'
     }
     elseif ($NuGetApiKey = GetSetting -Path $SettingsPath -Key NuGetApiKey) {
-        "Using stored NuGetApiKey"
+        'Using stored NuGetApiKey'
     }
     else {
         $promptForKeyCredParams = @{
@@ -572,7 +603,7 @@ Task CorePublish -requiredVariables SettingsPath, ModuleOutDir {
         $publishParams['ReleaseNotes'] = @(Get-Content $ReleaseNotesPath)
     }
 
-    "Calling Publish-Module..."
+    'Calling Publish-Module...'
     Publish-Module @publishParams
 }
 
@@ -581,7 +612,7 @@ Task CorePublish -requiredVariables SettingsPath, ModuleOutDir {
 ###############################################################################
 
 Task ? -description 'Lists the available tasks' {
-    "Available tasks:"
+    'Available tasks:'
     $psake.context.Peek().Tasks.Keys | Sort-Object
 }
 
@@ -603,7 +634,7 @@ Task StoreApiKey -requiredVariables SettingsPath {
 }
 
 Task ShowApiKey -requiredVariables SettingsPath {
-    $OFS = ""
+    $OFS = ''
     if ($NuGetApiKey) {
         "The embedded (partial) NuGetApiKey is: $($NuGetApiKey[0..7])"
     }
@@ -611,7 +642,7 @@ Task ShowApiKey -requiredVariables SettingsPath {
         "The stored (partial) NuGetApiKey is: $($NuGetApiKey[0..7])"
     }
     else {
-        "The NuGetApiKey has not been provided or stored."
+        'The NuGetApiKey has not been provided or stored.'
         return
     }
 
@@ -626,7 +657,7 @@ Task ShowFullApiKey -requiredVariables SettingsPath {
         "The stored NuGetApiKey is: $NuGetApiKey"
     }
     else {
-        "The NuGetApiKey has not been provided or stored."
+        'The NuGetApiKey has not been provided or stored.'
     }
 }
 
@@ -648,8 +679,8 @@ Task ShowCertSubjectName -requiredVariables SettingsPath {
     "The stored certificate is: $CertSubjectName"
 
     $cert = Get-ChildItem -Path Cert:\CurrentUser\My -CodeSigningCert |
-            Where-Object { $_.Subject -eq $CertSubjectName -and $_.NotAfter -gt (Get-Date) } |
-            Sort-Object -Property NotAfter -Descending | Select-Object -First 1
+        Where-Object { $_.Subject -eq $CertSubjectName -and $_.NotAfter -gt (Get-Date) } |
+        Sort-Object -Property NotAfter -Descending | Select-Object -First 1
 
     if ($cert) {
         "A valid certificate for the subject $CertSubjectName has been found"
@@ -663,11 +694,11 @@ Task BuildTests -requiredVariables SrcRootDir, TestRootDir {
     $PublicScriptFiles = @(Get-ChildItem "$SrcRootDir\Public" -Filter *.ps1 -Recurse)
 
     $PublicFunctions = @(foreach ($ScriptFile in $PublicScriptFiles) {
-        $Parser = [System.Management.Automation.Language.Parser]::ParseFile($ScriptFile.FullName, [ref] $null, [ref] $null)
-        if ($Parser.EndBlock.Statements.Name) {
-            $Parser.EndBlock.Statements.Name
-        }
-    })
+            $Parser = [System.Management.Automation.Language.Parser]::ParseFile($ScriptFile.FullName, [ref] $null, [ref] $null)
+            if ($Parser.EndBlock.Statements.Name) {
+                $Parser.EndBlock.Statements.Name
+            }
+        })
 
     foreach ($Function in $PublicFunctions) {
         $TestFile = Join-Path $TestRootDir "$Function.Tests.ps1"
@@ -697,7 +728,7 @@ Describe '$Function' {
 ###############################################################################
 
 function PromptUserForCredentialAndStorePassword {
-    [Diagnostics.CodeAnalysis.SuppressMessage("PSProvideDefaultParameterValue", '')]
+    [Diagnostics.CodeAnalysis.SuppressMessage('PSProvideDefaultParameterValue', '')]
     param(
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -713,7 +744,7 @@ function PromptUserForCredentialAndStorePassword {
         $Key
     )
 
-    $cred = Get-Credential -Message $Message -UserName "ignored"
+    $cred = Get-Credential -Message $Message -UserName 'ignored'
     if ($DestinationPath) {
         SetSetting -Key $Key -Value $cred.Password -Path $DestinationPath
     }
@@ -722,7 +753,7 @@ function PromptUserForCredentialAndStorePassword {
 }
 
 function AddSetting {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '', Scope='Function')]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '', Scope = 'Function')]
     param(
         [Parameter(Mandatory)]
         [string]$Key,
@@ -737,7 +768,7 @@ function AddSetting {
 
     switch ($type = $Value.GetType().Name) {
         'securestring' { $setting = $Value | ConvertFrom-SecureString }
-        default        { $setting = $Value }
+        default { $setting = $Value }
     }
 
     if (Test-Path -LiteralPath $Path) {
@@ -751,7 +782,7 @@ function AddSetting {
             New-Item $parentDir -ItemType Directory > $null
         }
 
-        @{$Key = @($type, $setting)} | Export-Clixml -Path $Path
+        @{$Key = @($type, $setting) } | Export-Clixml -Path $Path
     }
 }
 

@@ -23,6 +23,7 @@ jobs:
       - name: "Build & test"
         shell: pwsh
         run: |
+          git pull --tags
           $command = Join-Path $env:GITHUB_WORKSPACE tools build.ps1
           $command += ' Release'
           write-output $command

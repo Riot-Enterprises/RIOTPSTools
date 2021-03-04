@@ -20,6 +20,7 @@ jobs:
           $command = Join-Path $env:GITHUB_WORKSPACE tools build.ps1
           $command += ' Install'
           write-output $command
+          gci (Split-Path $command -Parent)
           iex $command
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:

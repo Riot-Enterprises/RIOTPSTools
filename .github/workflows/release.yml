@@ -1,0 +1,26 @@
+---
+name: "tagged-release"
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  tagged-release:
+    name: "Tagged Release"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      # ...
+      - name: "Build & test"
+        shell: pwsh
+        run: $Script=Join-Path $env:GITHUB_WORKSPACE tools tools.ps1 ; & $Script
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            LICENSE
+            ${{ github.workspaces }}/*.zip

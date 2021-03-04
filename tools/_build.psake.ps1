@@ -557,7 +557,7 @@ Task Release -depends Build, Test, BuildHelp, GenerateFileCatalog, BeforeRelease
 }
 
 Task CoreRelease -requiredVariables ModuleOutDir, OutDir, ModuleName {
-    Compress-Archive -DestinationPath $OutDir\$ModuleName.zip -Path $ModuleOutDir
+    Compress-Archive -DestinationPath $OutDir\Release.zip -Path $ModuleOutDir
 }
 
 Task Publish -depends Build, Test, BuildHelp, GenerateFileCatalog, BeforePublish, CorePublish, AfterPublish {

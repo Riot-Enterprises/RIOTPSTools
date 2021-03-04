@@ -8,11 +8,17 @@ jobs:
   publish-to-gallery:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Download
+      - uses: houqp/download-release-assets@v1
+        with:
+          repo: Riot-Enterprises/RIOTPSTools
+          match: "Release.zip"
+          rename: release.zip
       - name: Build and publish
         env:
           NUGET_KEY: ${{ secrets.POWERSHELL_GALLERY_KEY }}
         shell: pwsh
         run: |
-          ./build.ps1 -Path /tmp/samplemodule
-          Publish-Module -Path /tmp/samplemodule -NuGetApiKey $env:NUGET_KEY -Verbose
+          Expand-Archive -Path 'Release.zip' -Path release
+          $Folder = Get-ChildItem Release -Directory | Select -First 1
+          Publish-Module -Path $Folder -NuGetApiKey $env:NUGET_KEY -Verbose

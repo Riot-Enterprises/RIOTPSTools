@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download
-      - uses: houqp/download-release-assets@v1
+        uses: houqp/download-release-assets@v1
         with:
           repo: Riot-Enterprises/RIOTPSTools
           match: "Release.zip"

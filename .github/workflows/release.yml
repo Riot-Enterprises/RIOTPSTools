@@ -1,0 +1,37 @@
+---
+name: "📦 Create Release "
+
+on:
+  push:
+    tags: v[1-9]+\.[0-9]+\.[0-9]+
+  workflow_dispatch:
+
+jobs:
+  tagged-release:
+    name: "Tagged Release"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: "Install Dependencies"
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module psake, PSScriptAnalyzer, pester, BuildHelpers
+      - name: "Build & test"
+        shell: pwsh
+        run: |
+          git tag
+          $command = Join-Path $env:GITHUB_WORKSPACE tools build.ps1
+          $command += ' Release'
+          write-output $command
+          iex $command
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        name: Release
+        with:
+          repo_token: "${{ secrets.GIT_PAT }}"
+          prerelease: false
+          files: |
+            LICENSE
+            **/*.zip

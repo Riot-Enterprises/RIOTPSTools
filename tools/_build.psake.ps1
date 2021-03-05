@@ -127,6 +127,45 @@ Task ExportPublicFunctions -requiredVariables SrcRootDir, ModuleOutDir, ModuleNa
         'No public fuctions to export.'
     }
 }
+Task ExportGitVersion -requiredVariables ModuleOutDir, ModuleName {
+    $Manifest = (Get-ChildItem $ModuleOutDir -File -Recurse -Include "$ModuleName.psd1" | Sort-Object FullName.Length | Select-Object -First 1)
+    Import-Module BuildHelpers
+    $ProjectURL = (git remote get-url origin).Replace('.git', '')
+    $LicenseURL = "$ProjectURL/blob/main/LICENSE"
+    $Parms = @{
+        Path       = $Manifest.FullName
+        ProjectURI = $ProjectURL
+        LicenseURI = $LicenseURL
+    }
+    Update-ModuleManifest @Parms
+    $Version = (git tag | Select-String '^v\d+?\.\d+?\.\d+' |
+            ForEach-Object { [version]($_.Matches[0].Value.Replace('v', '')) } |
+            Sort-Object -Descending | Select-Object -First 1).ToString()
+    If ($Version) {
+        $branch = git symbolic-ref --short HEAD
+        switch ($branch) {
+            'main' { $pre = '' }
+            'develop' { $pre = 'alpha' }
+            Default {
+                if ($branch.StartsWith('release')) {
+                    $pre = 'beta'
+                }
+                else {
+                    $pre = 'alpha'
+                }
+            }
+        }
+        "Setting Module Version $Version $pre"
+        Update-Metadata -Path $Manifest.FullName -PropertyName ModuleVersion -Value $Version
+        if ($pre) {
+            Update-Metadata -Path $Manifest.FullName -PropertyName PreRelease -Value $pre
+        }
+        else {
+            (Get-Content -Path $Manifest.FullName -Raw).Replace('Prerelease', '# Prerelease') |
+                Set-Content -Path $Manifest.FullName
+        }
+    }
+}
 
 Task ExportFunctionsToSrc -requiredVariables SrcRootDir, ModuleName {
     $PublicScriptFiles = @(Get-ChildItem "$SrcRootDir\Public" -Filter *.ps1 -Recurse)
@@ -155,7 +194,7 @@ Task Clean -depends Init -requiredVariables OutDir {
     }
 }
 
-Task StageFiles -depends Init, Clean, BeforeStageFiles, CoreStageFiles, AfterStageFiles, ExportPublicFunctions {
+Task StageFiles -depends Init, Clean, BeforeStageFiles, CoreStageFiles, AfterStageFiles, ExportPublicFunctions, ExportGitVersion {
 }
 
 Task CoreStageFiles -requiredVariables ModuleOutDir, SrcRootDir, ModuleName {
@@ -556,8 +595,9 @@ Task Test -depends Build -requiredVariables TestRootDir, ModuleName {
 Task Release -depends Build, Test, BuildHelp, GenerateFileCatalog, BeforeRelease, CoreRelease, AfterRelease {
 }
 
+
 Task CoreRelease -requiredVariables ModuleOutDir, OutDir, ModuleName {
-    Compress-Archive -DestinationPath $OutDir\$ModuleName.zip -Path $ModuleOutDir
+    Compress-Archive -DestinationPath $OutDir\Release.zip -Path $ModuleOutDir
 }
 
 Task Publish -depends Build, Test, BuildHelp, GenerateFileCatalog, BeforePublish, CorePublish, AfterPublish {

@@ -1,0 +1,27 @@
+name: 🎁 Publish PowerShell Module
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+jobs:
+  publish-to-gallery:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: "Riot-Enterprises/RIOTPSTools"
+          version: "latest"
+          file: "Release.zip"
+          target: "Release.zip"
+      - name: Build and publish
+        env:
+          NUGET_KEY: ${{ secrets.POWERSHELL_GALLERY_KEY }}
+        shell: pwsh
+        run: |
+          Expand-Archive -Path 'Release.zip' -DestinationPath Release
+          $Folder = Get-ChildItem Release -Directory | Select -First 1
+          Publish-Module -Path $Folder -NuGetApiKey $env:NUGET_KEY

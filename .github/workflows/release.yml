@@ -30,7 +30,7 @@ jobs:
           iex $command
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          repo_token: "${{ secrets.GIT_PAT }}"
           prerelease: false
           files: |
             LICENSE

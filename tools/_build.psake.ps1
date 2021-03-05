@@ -149,7 +149,13 @@ Task ExportGitVersion -requiredVariables ModuleOutDir, ModuleName {
         }
         "Setting Module Version $Version $pre"
         Update-Metadata -Path $Manifest.FullName -PropertyName ModuleVersion -Value $Version
-        Update-Metadata -Path $Manifest.FullName -PropertyName PreRelease -Value $pre
+        if ($pre) {
+            Update-Metadata -Path $Manifest.FullName -PropertyName PreRelease -Value $pre
+        }
+        else {
+            (Get-Content -Path $Manifest.FullName -Raw).Replace('Prerelease', '# Prerelease') |
+                Set-Content -Path $Manifest.FullName
+        }
     }
 }
 

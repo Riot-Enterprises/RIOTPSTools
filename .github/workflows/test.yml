@@ -16,6 +16,8 @@ jobs:
       - name: "Build & test"
         shell: pwsh
         run: |
-          Write-Output $env:GITHUB_REF
+          $tag = ($env:GITHUB_REF).Replace('refs/tags/','')
+          $branches = git branch --contains "tags/$tag"
           "$env:GITHUB_REF"
+          "$branches"
 

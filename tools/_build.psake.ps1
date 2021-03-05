@@ -130,10 +130,9 @@ Task ExportPublicFunctions -requiredVariables SrcRootDir, ModuleOutDir, ModuleNa
 Task ExportGitVersion -requiredVariables ModuleOutDir, ModuleName {
     $Manifest = (Get-ChildItem $ModuleOutDir -File -Recurse -Include "$ModuleName.psd1" | Sort-Object FullName.Length | Select-Object -First 1)
     Import-Module BuildHelpers
-    $Version = git describe | Select-String '^\d+?\.\d+?\.\d+?\w'  | Select-Object -ExpandProperty Matches | Select-Object -ExpandProperty Value
-    If (!($Version)) {
-        $Version = ((git tag | ForEach-Object { [version]$_ }) | Sort-Object -Desc | Select-Object -First 1).ToString()
-    }
+    $Version = (git tag | Select-String '\d+?\.\d+?\.\d+' |
+            ForEach-Object { [version]($_.Matches[0].Value) } |
+            Sort-Object -Descending | Select-Object -First 1).ToString()
     If ($Version) {
         Update-Metadata -Path $Manifest.FullName -PropertyName ModuleVersion -Value $Version
     }

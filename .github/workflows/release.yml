@@ -1,5 +1,5 @@
 ---
-name: "tagged-release"
+name: "📦 Create Release "
 
 on:
   push:

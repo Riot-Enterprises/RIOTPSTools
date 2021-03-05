@@ -132,8 +132,9 @@ Task ExportGitVersion -requiredVariables ModuleOutDir, ModuleName {
     Import-Module BuildHelpers
     $branch = git symbolic-ref --short HEAD
     $ProjectURL = (git remote get-url origin).Replace('.git', '')
+    # https://raw.githubusercontent.com/Riot-Enterprises/RIOTPSTools/develop/worm-gear.ico
     $LicenseURL = "$ProjectURL/blob/$branch/LICENSE"
-    $IconURL = "$ProjectURL/blob/$branch/worm-gear.ico"
+    $IconURL = "https://raw.githubusercontent.com/Riot-Enterprises/RIOTPSTools/develop/worm-gear.ico"
     $Parms = @{
         Path       = $Manifest.FullName
         ProjectURI = $ProjectURL

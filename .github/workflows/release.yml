@@ -3,8 +3,7 @@ name: "📦 Create Release "
 
 on:
   push:
-    tags:
-      - "*"
+    tags: v[1-9]+\.[0-9]+\.[0-9]+
   workflow_dispatch:
 
 jobs:
@@ -29,6 +28,8 @@ jobs:
           write-output $command
           iex $command
       - uses: "marvinpinto/action-automatic-releases@latest"
+        name: Release
+        if: ${{ !(allways()) }}
         with:
           repo_token: "${{ secrets.GIT_PAT }}"
           prerelease: false

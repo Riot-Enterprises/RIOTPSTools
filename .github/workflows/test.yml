@@ -1,0 +1,21 @@
+name: "📦 Create Release "
+
+on:
+  push:
+    tags: v[1-9]+\.[0-9]+\.[0-9]+
+  workflow_dispatch:
+
+jobs:
+  tagged-release:
+    name: "Tagged Release"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: "Build & test"
+        shell: pwsh
+        run: |
+          Write-Output $env:GITHUB_REF
+          "$env:GITHUB_REF"
+

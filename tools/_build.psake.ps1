@@ -134,8 +134,22 @@ Task ExportGitVersion -requiredVariables ModuleOutDir, ModuleName {
             ForEach-Object { [version]($_.Matches[0].Value.Replace('v', '')) } |
             Sort-Object -Descending | Select-Object -First 1).ToString()
     If ($Version) {
-        "Setting Module Version $Version"
+        $branch = git symbolic-ref --short HEAD
+        switch ($branch) {
+            'main' { $pre = '' }
+            'develop' { $pre = 'alpha' }
+            Default {
+                if ($branch.StartsWith('release')) {
+                    $pre = 'beta'
+                }
+                else {
+                    $pre = 'alpha'
+                }
+            }
+        }
+        "Setting Module Version $Version $pre"
         Update-Metadata -Path $Manifest.FullName -PropertyName ModuleVersion -Value $Version
+        Update-Metadata -Path $Manifest.FullName -PropertyName PreRelease -Value $pre
     }
 }
 

@@ -130,6 +130,9 @@ Task ExportPublicFunctions -requiredVariables SrcRootDir, ModuleOutDir, ModuleNa
 Task ExportGitVersion -requiredVariables ModuleOutDir, ModuleName {
     $Manifest = (Get-ChildItem $ModuleOutDir -File -Recurse -Include "$ModuleName.psd1" | Sort-Object FullName.Length | Select-Object -First 1)
     Import-Module BuildHelpers
+    if ($env:GITHUB_REF) {
+        "$($env:GITHUB_REF)"    
+    }
     $branch = git symbolic-ref --short HEAD
     $ProjectURL = (git remote get-url origin).Replace('.git', '')
     # https://raw.githubusercontent.com/Riot-Enterprises/RIOTPSTools/develop/worm-gear.ico

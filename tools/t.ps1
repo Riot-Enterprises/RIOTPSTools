@@ -1,1 +1,1 @@
-Invoke-psake -buildFile "$PSScriptRoot\_build.psake.ps1" -taskList 'ExportGitVersion' -Verbose:$VerbosePreference
+Invoke-psake -buildFile "$PSScriptRoot\_build.psake.ps1" -taskList 'Set-ModuleLinks' -Verbose:$VerbosePreference

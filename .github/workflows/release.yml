@@ -29,7 +29,6 @@ jobs:
           iex $command
       - uses: "marvinpinto/action-automatic-releases@latest"
         name: Release
-        if: ${{ false }}
         with:
           repo_token: "${{ secrets.GIT_PAT }}"
           prerelease: false

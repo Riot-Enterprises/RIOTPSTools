@@ -22,4 +22,6 @@ jobs:
           Install-Module BuildHelpers
           Import-Module BuildHelpers
           $BuildEnvironment = Get-BuildEnvironment
-          git config gitflow.branch.master
+          $x = (git config gitflow.branch.master)
+          "$x fred"
+          exit 0 

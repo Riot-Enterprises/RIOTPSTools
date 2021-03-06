@@ -2,6 +2,10 @@ name: "📦 Create Release "
 
 on:
   push:
+    branches: *
+    tags: v[1-9]+\.[0-9]+\.[0-9]+
+
+
   workflow_dispatch:
 
 jobs:
@@ -18,6 +22,18 @@ jobs:
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module BuildHelpers
           Import-Module BuildHelpers
-          Get-BuildEnvironment
-
+          $BuildEnvironment = Get-BuildEnvironment
+          if($BuildEnvironment.BranchName.StartsWith('refs/tags/')) {
+            $tag = $BuildEnvironment.BranchName.Replace('refs/tags/','')
+          } else {
+                $prefix = (git config gitflow.prefix.versiontag)
+                $RegEx = "^$([regex]::Escape($prefix))(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)(?:-(?<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+                git tag | Select-String $RegEx | Select-Object -ExpandProperty Matches | Select-Object Value | 
+                ForEach-Object { 
+                  $x = $null; 
+                  $null = [System.Management.Automation.SemanticVersion]::tryparse($_.Value, [ref]$x)
+                  $x 
+                } | Sort-Object -Descending | Select-Object -First 1 
+          }
+          $tag
 

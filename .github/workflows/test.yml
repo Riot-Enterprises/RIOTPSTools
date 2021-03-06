@@ -13,11 +13,12 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
-      - name: "Build & test"
+      - name: "Install Dependencies"
         shell: pwsh
         run: |
-          $tag = ($env:GITHUB_REF).Replace('refs/tags/','')
-          $branches = git branch --contains "tags/$tag"
-          "$env:GITHUB_REF"
-          "$branches"
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module BuildHelpers
+          Import-Module BuildHelpers
+          Get-BuildEnvironment
+
 
